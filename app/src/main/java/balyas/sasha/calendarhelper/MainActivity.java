@@ -27,73 +27,30 @@ import java.util.TimeZone;
 public class MainActivity extends AppCompatActivity {
 
     public static final long eventID = 10001;
+    public static final long calendarID = 1; //Because 99% users have as least 1 calendar
 
-   /* public static final String[] EVENT_PROJECTION = new String[] {
-            CalendarContract.Calendars._ID,                           // 0
-            CalendarContract.Calendars.ACCOUNT_NAME,                  // 1
-            CalendarContract.Calendars.CALENDAR_DISPLAY_NAME,         // 2
-            CalendarContract.Calendars.OWNER_ACCOUNT                  // 3
-    };
-
-    // The indices for the projection array above.
-    private static final int PROJECTION_ID_INDEX = 0;
-    private static final int PROJECTION_ACCOUNT_NAME_INDEX = 1;
-    private static final int PROJECTION_DISPLAY_NAME_INDEX = 2;
-    private static final int PROJECTION_OWNER_ACCOUNT_INDEX = 3;*/
-
-
-    EditText mETChangeDescription;
-
-//    String calendarID;
+    EditText mETChangeTitle;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        
-        mETChangeDescription = (EditText) findViewById(R.id.etChangeDescription);
+
+        mETChangeTitle = (EditText) findViewById(R.id.etChangeTitle);
     }
 
     public void create(View view) {
 
-       /* Cursor curInfo = null;
-        ContentResolver crInfo = getContentResolver();
-        Uri uriInfo = CalendarContract.Calendars.CONTENT_URI;
-
-// Submit the query and get a Cursor object back.
-        curInfo = crInfo.query(uriInfo, EVENT_PROJECTION, null, null, null);
-
-        if (null != curInfo) {
-            curInfo.moveToFirst();
-
-            do {
-                long calID = 0;
-                String displayName = null;
-                String accountName = null;
-                String ownerName = null;
-
-                // Get the field values
-                calID = curInfo.getLong(PROJECTION_ID_INDEX);
-                displayName = curInfo.getString(PROJECTION_DISPLAY_NAME_INDEX);
-                accountName = curInfo.getString(PROJECTION_ACCOUNT_NAME_INDEX);
-                ownerName = curInfo.getString(PROJECTION_OWNER_ACCOUNT_INDEX);
-
-                // Do something with the values...
-                Log.d("Calendar Info", "Calendar ID = " + calID + " , Account Name = " + accountName + " , Owner Name = " + ownerName);
-
-                calendarID = String.valueOf(calID);
-
-            } while (curInfo.moveToNext());
-        }*/
-
         long startMillis;
         long endMillis;
+
         Calendar beginTime = Calendar.getInstance();
-        beginTime.set(2017, 2, 25, 11, 0);// set(int year, int month, int day, int hourOfDay, int minute)
+        beginTime.set(2017, 2, 26, 11, 0);// set(int year, int month, int day, int hourOfDay, int minute)
         startMillis = beginTime.getTimeInMillis();
+
         Calendar endTime = Calendar.getInstance();
-        endTime.set(2017, 2, 25, 14, 0);
+        endTime.set(2017, 2, 26, 14, 0);
         endMillis = endTime.getTimeInMillis();
 
         TimeZone tz = TimeZone.getDefault();
@@ -107,7 +64,7 @@ public class MainActivity extends AppCompatActivity {
         values.put(CalendarContract.Events._ID, eventID);
         values.put(CalendarContract.Events.TITLE, "Твоё ЗНО по математике");
         values.put(CalendarContract.Events.DESCRIPTION, "Сходи и сдай его на отлично");
-        values.put(CalendarContract.Events.CALENDAR_ID, 1);
+        values.put(CalendarContract.Events.CALENDAR_ID, calendarID);
         values.put(CalendarContract.Events.EVENT_TIMEZONE, tz.getID());
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_CALENDAR) != PackageManager.PERMISSION_GRANTED) {
             // TODO: Consider calling
@@ -119,12 +76,21 @@ public class MainActivity extends AppCompatActivity {
             // for ActivityCompat#requestPermissions for more details.
             return;
         }
-//        cr.insert(CalendarContract.Calendars.CONTENT_URI, valuesCal);
-        Uri uri = cr.insert(CalendarContract.Events.CONTENT_URI, values);
-        long eventID = Long.parseLong(uri.getLastPathSegment());
+
+        cr.insert(CalendarContract.Events.CONTENT_URI, values);
+
+        ContentResolver cr2 = getContentResolver();
+        ContentValues values2 = new ContentValues();
+
+        values2.put(CalendarContract.Reminders.MINUTES, 30);
+        values2.put(CalendarContract.Reminders.EVENT_ID, eventID);
+        values2.put(CalendarContract.Reminders.METHOD, CalendarContract.Reminders.METHOD_ALERT);
+        cr2.insert(CalendarContract.Reminders.CONTENT_URI, values2);
 
 
         Toast.makeText(this, "Event was created", Toast.LENGTH_SHORT).show();
+
+
     }
 
     public void intentCreate(View view) {
@@ -148,11 +114,11 @@ public class MainActivity extends AppCompatActivity {
         ContentValues values = new ContentValues();
         Uri updateUri;
 
-        values.put(CalendarContract.Events.DESCRIPTION, mETChangeDescription.getText().toString());
+        values.put(CalendarContract.Events.TITLE, mETChangeTitle.getText().toString());
         updateUri = ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, eventID);
         int rows = getContentResolver().update(updateUri, values, null, null);
 
-        mETChangeDescription.setText("");
+        mETChangeTitle.setText("");
 
         Log.i("CHANGE EVENT", "Rows updated: " + rows);
         Toast.makeText(this, "Event was changed", Toast.LENGTH_SHORT).show();

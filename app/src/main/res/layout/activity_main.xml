@@ -12,34 +12,35 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:gravity="center">
 
         <Button
-            android:layout_width="wrap_content"
+            android:layout_width="200dp"
             android:layout_height="wrap_content"
             android:onClick="create"
-            android:text="Create event"/>
+            android:text="Create simple event"/>
 
         <Button
-            android:layout_width="wrap_content"
+            android:layout_width="200dp"
             android:layout_height="wrap_content"
             android:onClick="intentCreate"
             android:text="Create event with Intent"/>
 
         <EditText
-            android:id="@+id/etChangeDescription"
+            android:id="@+id/etChangeTitle"
             android:layout_width="200dp"
             android:layout_height="wrap_content"
-            android:hint="description"/>
+            android:hint="title"/>
 
         <Button
-            android:layout_width="wrap_content"
+            android:layout_width="200dp"
             android:layout_height="wrap_content"
             android:onClick="change"
-            android:text="Change description"/>
+            android:text="Change title"/>
 
         <Button
-            android:layout_width="wrap_content"
+            android:layout_width="200dp"
             android:layout_height="wrap_content"
             android:onClick="delete"
             android:text="Delete event"/>
