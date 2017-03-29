@@ -1,25 +1,32 @@
 package balyas.sasha.calendarhelper;
 
 import android.Manifest;
+import android.annotation.TargetApi;
+import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Build;
 import android.provider.CalendarContract;
 import android.support.v4.app.ActivityCompat;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
@@ -27,7 +34,20 @@ import java.util.TimeZone;
 public class MainActivity extends AppCompatActivity {
 
     public static final long eventID = 10001;
-    public static final long calendarID = 1; //Because 99% users have as least 1 calendar
+    public static long calendarID = 1; //Because 99% users have as least 1 calendar
+
+    public static final String[] EVENT_PROJECTION = new String[]{
+            CalendarContract.Calendars._ID,                           // 0
+            CalendarContract.Calendars.ACCOUNT_NAME,                  // 1
+            CalendarContract.Calendars.CALENDAR_DISPLAY_NAME,         // 2
+            CalendarContract.Calendars.OWNER_ACCOUNT                  // 3
+    };
+
+    // The indices for the projection array above.
+    private static final int PROJECTION_ID_INDEX = 0;
+    private static final int PROJECTION_ACCOUNT_NAME_INDEX = 1;
+    private static final int PROJECTION_DISPLAY_NAME_INDEX = 2;
+    private static final int PROJECTION_OWNER_ACCOUNT_INDEX = 3;
 
     EditText mETChangeTitle;
 
@@ -42,6 +62,79 @@ public class MainActivity extends AppCompatActivity {
 
     public void create(View view) {
 
+        final ArrayAdapter<String> calendarEmails = new ArrayAdapter<String>(MainActivity.this, android.R.layout.select_dialog_singlechoice);
+
+        Cursor curInfo = null;
+        ContentResolver crInfo = getContentResolver();
+        Uri uriInfo = CalendarContract.Calendars.CONTENT_URI;
+
+        // Submit the query and get a Cursor object back.
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_CALENDAR) != PackageManager.PERMISSION_GRANTED) {
+//            if (ActivityCompat.shouldShowRequestPermissionRationale(MainActivity.this, Manifest.permission.READ_CALENDAR)) {
+//                AlertDialog.Builder alertBuilder = new AlertDialog.Builder(MainActivity.this);
+//                alertBuilder.setCancelable(true);
+//                alertBuilder.setMessage("Write calendar permission is necessary to write event!!!");
+//                alertBuilder.setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+//                    @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
+//                    public void onClick(DialogInterface dialog, int which) {
+//                        ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.READ_CALENDAR}, 1002);
+//                    }
+//                });
+//            } else {
+//                ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.READ_CALENDAR}, 1002);
+//            }
+        }
+        curInfo = crInfo.query(uriInfo, EVENT_PROJECTION, null, null, null);
+
+        if (null != curInfo) {
+            curInfo.moveToFirst();
+
+            do {
+                long calID = 0;
+                String displayName = null;
+                String accountName = null;
+                String ownerName = null;
+
+                // Get the field values
+                calID = curInfo.getLong(PROJECTION_ID_INDEX);
+                displayName = curInfo.getString(PROJECTION_DISPLAY_NAME_INDEX);
+                accountName = curInfo.getString(PROJECTION_ACCOUNT_NAME_INDEX);
+                ownerName = curInfo.getString(PROJECTION_OWNER_ACCOUNT_INDEX);
+
+                // Do something with the values...
+                Log.d("Calendar Info", "Calendar ID = " + calID + " , Display Name = " + displayName + " , Account Name = " + accountName + " , Owner Name = " + ownerName);
+                if (null != accountName) {
+                    calendarEmails.add(accountName);
+                }
+                calendarID = calID;
+
+            } while (curInfo.moveToNext());
+
+
+            if (curInfo.getCount() > 1) {
+                AlertDialog.Builder builderSingle = new AlertDialog.Builder(MainActivity.this);
+                builderSingle.setTitle("Select One Calendar:-");
+
+
+                builderSingle.setNegativeButton("cancel", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                    }
+                });
+
+                builderSingle.setAdapter(calendarEmails, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int position) {
+                        add(position + 1);
+                    }
+                });
+                builderSingle.show();
+            }
+        }
+    }
+
+    private void add(int calendar) {
         long startMillis;
         long endMillis;
 
@@ -64,17 +157,22 @@ public class MainActivity extends AppCompatActivity {
         values.put(CalendarContract.Events._ID, eventID);
         values.put(CalendarContract.Events.TITLE, "Твоё ЗНО по математике");
         values.put(CalendarContract.Events.DESCRIPTION, "Сходи и сдай его на отлично");
-        values.put(CalendarContract.Events.CALENDAR_ID, calendarID);
+        values.put(CalendarContract.Events.CALENDAR_ID, calendar);
         values.put(CalendarContract.Events.EVENT_TIMEZONE, tz.getID());
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_CALENDAR) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-            return;
+//            if (ActivityCompat.shouldShowRequestPermissionRationale(MainActivity.this, Manifest.permission.WRITE_CALENDAR)) {
+//                AlertDialog.Builder alertBuilder = new AlertDialog.Builder(MainActivity.this);
+//                alertBuilder.setCancelable(true);
+//                alertBuilder.setMessage("Write calendar permission is necessary to write event!!!");
+//                alertBuilder.setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+//                    @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
+//                    public void onClick(DialogInterface dialog, int which) {
+//                        ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.WRITE_CALENDAR}, 1001);
+//                    }
+//                });
+//            } else {
+//                ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.WRITE_CALENDAR}, 1001);
+//            }
         }
 
         cr.insert(CalendarContract.Events.CONTENT_URI, values);
