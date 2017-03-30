@@ -13,6 +13,9 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.provider.CalendarContract;
+import android.provider.Settings;
+import android.support.annotation.NonNull;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -31,7 +34,14 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 
+import butterknife.BindView;
+import butterknife.ButterKnife;
+import butterknife.OnClick;
+
 public class MainActivity extends AppCompatActivity {
+
+    public static final int REQUEST_PERMISSION_READ_CALENDAR_CODE = 101;
+    public static final int REQUEST_PERMISSION_WRITE_CALENDAR_CODE = 102;
 
     public static final long eventID = 10001;
     public static long calendarID = 1; //Because 99% users have as least 1 calendar
@@ -49,18 +59,77 @@ public class MainActivity extends AppCompatActivity {
     private static final int PROJECTION_DISPLAY_NAME_INDEX = 2;
     private static final int PROJECTION_OWNER_ACCOUNT_INDEX = 3;
 
-    EditText mETChangeTitle;
+    @BindView(R.id.etChangeTitle) EditText mETChangeTitle;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        mETChangeTitle = (EditText) findViewById(R.id.etChangeTitle);
+        ButterKnife.bind(this);
     }
 
-    public void create(View view) {
+
+
+    @OnClick (R.id.btCreate)
+    public void createEvent(View view) {
+        if (hasPermissions()) {
+            create();
+        } else {
+            requestPermissionWithRationale();
+        }
+    }
+
+    @OnClick (R.id.btIntentCreate)
+    public void createIntentEvent(View view) {
+        if (hasPermissions()) {
+            intentCreate();
+        } else {
+            requestPermissionWithRationale();
+        }
+    }
+
+    @OnClick (R.id.btChange)
+    public void changeEvent(View view) {
+        if (hasPermissions()) {
+            change();
+        } else {
+            requestPermissionWithRationale();
+        }
+    }
+
+    @OnClick (R.id.btDelete)
+    public void deleteEvent(View view) {
+        if (hasPermissions()) {
+            delete();
+        } else {
+            requestPermissionWithRationale();
+        }
+    }
+
+
+    /**
+     * Check if our app has needed permissions
+     * @return logical variable which show if we have permissions
+     */
+    private boolean hasPermissions(){
+        int res = 0;
+        //string array of permissions,
+        String[] permissions = new String[]{Manifest.permission.WRITE_CALENDAR, Manifest.permission.READ_CALENDAR};
+
+        for (String perms : permissions){
+            res = checkCallingOrSelfPermission(perms);
+            if (!(res == PackageManager.PERMISSION_GRANTED)){
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Choose user calendarID and prepare data to add to main calendar
+     */
+    public void create() {
 
         final ArrayAdapter<String> calendarEmails = new ArrayAdapter<String>(MainActivity.this, android.R.layout.select_dialog_singlechoice);
 
@@ -70,19 +139,7 @@ public class MainActivity extends AppCompatActivity {
 
         // Submit the query and get a Cursor object back.
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_CALENDAR) != PackageManager.PERMISSION_GRANTED) {
-//            if (ActivityCompat.shouldShowRequestPermissionRationale(MainActivity.this, Manifest.permission.READ_CALENDAR)) {
-//                AlertDialog.Builder alertBuilder = new AlertDialog.Builder(MainActivity.this);
-//                alertBuilder.setCancelable(true);
-//                alertBuilder.setMessage("Write calendar permission is necessary to write event!!!");
-//                alertBuilder.setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
-//                    @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
-//                    public void onClick(DialogInterface dialog, int which) {
-//                        ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.READ_CALENDAR}, 1002);
-//                    }
-//                });
-//            } else {
-//                ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.READ_CALENDAR}, 1002);
-//            }
+
         }
         curInfo = crInfo.query(uriInfo, EVENT_PROJECTION, null, null, null);
 
@@ -134,16 +191,20 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * create event
+     * @param calendar it's id calendar which user choose
+     */
     private void add(int calendar) {
         long startMillis;
         long endMillis;
 
         Calendar beginTime = Calendar.getInstance();
-        beginTime.set(2017, 2, 26, 11, 0);// set(int year, int month, int day, int hourOfDay, int minute)
+        beginTime.set(2017, 2, 31, 11, 0);// set(int year, int month, int day, int hourOfDay, int minute)
         startMillis = beginTime.getTimeInMillis();
 
         Calendar endTime = Calendar.getInstance();
-        endTime.set(2017, 2, 26, 14, 0);
+        endTime.set(2017, 2, 31, 14, 0);
         endMillis = endTime.getTimeInMillis();
 
         TimeZone tz = TimeZone.getDefault();
@@ -159,20 +220,10 @@ public class MainActivity extends AppCompatActivity {
         values.put(CalendarContract.Events.DESCRIPTION, "Сходи и сдай его на отлично");
         values.put(CalendarContract.Events.CALENDAR_ID, calendar);
         values.put(CalendarContract.Events.EVENT_TIMEZONE, tz.getID());
+
+        //Needed to doesn't kick our app
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_CALENDAR) != PackageManager.PERMISSION_GRANTED) {
-//            if (ActivityCompat.shouldShowRequestPermissionRationale(MainActivity.this, Manifest.permission.WRITE_CALENDAR)) {
-//                AlertDialog.Builder alertBuilder = new AlertDialog.Builder(MainActivity.this);
-//                alertBuilder.setCancelable(true);
-//                alertBuilder.setMessage("Write calendar permission is necessary to write event!!!");
-//                alertBuilder.setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
-//                    @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
-//                    public void onClick(DialogInterface dialog, int which) {
-//                        ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.WRITE_CALENDAR}, 1001);
-//                    }
-//                });
-//            } else {
-//                ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.WRITE_CALENDAR}, 1001);
-//            }
+
         }
 
         cr.insert(CalendarContract.Events.CONTENT_URI, values);
@@ -191,12 +242,15 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    public void intentCreate(View view) {
+    /**
+     * create event with intent
+     */
+    public void intentCreate() {
 
         Calendar beginTime = Calendar.getInstance();
-        beginTime.set(2017, 2, 25, 10, 30);
+        beginTime.set(2017, 2, 30, 10, 30);
         Calendar endTime = Calendar.getInstance();
-        endTime.set(2017, 2, 25, 13, 30);
+        endTime.set(2017, 2, 30, 13, 30);
         Intent intent = new Intent(Intent.ACTION_INSERT)
                 .setData(CalendarContract.Events.CONTENT_URI)
                 .putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, beginTime.getTimeInMillis())
@@ -208,7 +262,11 @@ public class MainActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
-    public void change(View view) {
+
+    /**
+     * change our event by eventID
+     */
+    public void change() {
         ContentValues values = new ContentValues();
         Uri updateUri;
 
@@ -222,7 +280,10 @@ public class MainActivity extends AppCompatActivity {
         Toast.makeText(this, "Event was changed", Toast.LENGTH_SHORT).show();
     }
 
-    public void delete(View view) {
+    /**
+     * delete our event by eventID
+     */
+    public void delete() {
         Uri deleteUri = ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, eventID);
         int rows = getContentResolver().delete(deleteUri, null, null);
 
@@ -230,4 +291,112 @@ public class MainActivity extends AppCompatActivity {
         Toast.makeText(this, "Event was deleted", Toast.LENGTH_SHORT).show();
 
     }
+
+    /**
+     * try to get request permission code
+     * check device sdk version
+     */
+    private void requestPerms(){
+        String[] permissions = new String[]{Manifest.permission.READ_CALENDAR, Manifest.permission.WRITE_CALENDAR};
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
+            requestPermissions(permissions,REQUEST_PERMISSION_WRITE_CALENDAR_CODE);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        boolean allowed = true;
+
+        switch (requestCode){
+            case REQUEST_PERMISSION_WRITE_CALENDAR_CODE:
+
+                for (int res : grantResults) {
+                    // if user granted all permissions.
+                    allowed = allowed && (res == PackageManager.PERMISSION_GRANTED);
+                }
+
+                break;
+
+            default:
+                // if user not granted permissions.
+                allowed = false;
+                break;
+        }
+
+        if (allowed){
+            //user granted all permissions we can perform our task.
+            //create();
+        }
+        else {
+            // we will give warning to user that they haven't granted permissions.
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                if (shouldShowRequestPermissionRationale(Manifest.permission.READ_CALENDAR)){
+                    Toast.makeText(this, "Calendar Permissions denied.", Toast.LENGTH_SHORT).show();
+
+                } else {
+                    showNoStoragePermissionSnackbar();
+                }
+            }
+        }
+
+    }
+
+
+    /**
+     * use this method if user choose 'never show again' in dialog
+     */
+    public void showNoStoragePermissionSnackbar() {
+        Snackbar.make(MainActivity.this.findViewById(R.id.clMainActivityLayout), "Calendar permission isn't granted" , Snackbar.LENGTH_LONG)
+                .setAction("SETTINGS", new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        openApplicationSettings();
+
+                        Toast.makeText(getApplicationContext(),
+                                "Open Permissions and grant the Calendar permission",
+                                Toast.LENGTH_SHORT)
+                                .show();
+                    }
+                })
+                .show();
+    }
+
+    /**
+     * Intent to show needed permission in app's settings
+     */
+    public void openApplicationSettings() {
+        Intent appSettingsIntent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                Uri.parse("package:" + getPackageName()));
+        startActivityForResult(appSettingsIntent, REQUEST_PERMISSION_READ_CALENDAR_CODE);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == REQUEST_PERMISSION_READ_CALENDAR_CODE || requestCode == REQUEST_PERMISSION_WRITE_CALENDAR_CODE) {
+            return;
+        }
+        super.onActivityResult(requestCode, resultCode, data);
+    }
+
+    /**
+     * use this method if user doesn't grant permissions what he need
+     */
+    public void requestPermissionWithRationale() {
+        if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                Manifest.permission.READ_CALENDAR)) {
+            final String message = "Calendar permission is needed to create important events!";
+            Snackbar.make(MainActivity.this.findViewById(R.id.clMainActivityLayout), message, Snackbar.LENGTH_LONG)
+                    .setAction("GRANT", new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            requestPerms();
+                        }
+                    })
+                    .show();
+        } else {
+            requestPerms();
+        }
+    }
+
+
 }

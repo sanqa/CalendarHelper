@@ -5,6 +5,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:id="@+id/clMainActivityLayout"
     tools:context="balyas.sasha.calendarhelper.MainActivity">
 
 
@@ -16,15 +17,15 @@
         android:gravity="center">
 
         <Button
+            android:id="@+id/btCreate"
             android:layout_width="200dp"
             android:layout_height="wrap_content"
-            android:onClick="create"
             android:text="Create simple event"/>
 
         <Button
+            android:id="@+id/btIntentCreate"
             android:layout_width="200dp"
             android:layout_height="wrap_content"
-            android:onClick="intentCreate"
             android:text="Create event with Intent"/>
 
         <EditText
@@ -34,15 +35,15 @@
             android:hint="title"/>
 
         <Button
+            android:id="@+id/btChange"
             android:layout_width="200dp"
             android:layout_height="wrap_content"
-            android:onClick="change"
             android:text="Change title"/>
 
         <Button
+            android:id="@+id/btDelete"
             android:layout_width="200dp"
             android:layout_height="wrap_content"
-            android:onClick="delete"
             android:text="Delete event"/>
 
     </LinearLayout>
